@@ -17,13 +17,13 @@ A Model Context Protocol (MCP) server for Elasticsearch operations, providing a 
 Install the package globally:
 
 ```bash
-npm install -g octodet-elasticsearch-mcp
+npm install -g @octodet/elasticsearch-mcp
 ```
 
 Or use it directly with npx:
 
 ```bash
-npx octodet-elasticsearch-mcp
+npx @octodet/elasticsearch-mcp
 ```
 
 ### From Source
@@ -52,12 +52,52 @@ Add the following configuration to your VS Code settings.json to integrate with 
   "elasticsearch": {
     "command": "npx",
     "args": [
-      "-y", "octodet-elasticsearch-mcp"
+      "-y", "@octodet/elasticsearch-mcp"
     ],
     "env": {
       "ES_URL": "http://localhost:9200",
       "ES_API_KEY": "your_api_key",
       "ES_VERSION": "8"
+    }
+  }
+}
+```
+
+### Claude Desktop Integration
+
+Configure in your Claude Desktop configuration file:
+
+```json
+{
+  "mcpServers": {
+    "elasticsearch": {
+      "command": "npx",
+      "args": ["-y", "@octodet/elasticsearch-mcp"],
+      "env": {
+        "ES_URL": "http://localhost:9200",
+        "ES_API_KEY": "your_api_key",
+        "ES_VERSION": "8"
+      }
+    }
+  }
+}
+```
+
+### For Local Development
+
+If you're developing the MCP server locally, you can configure the clients to use your local build:
+
+```json
+{
+  "mcpServers": {
+    "elasticsearch": {
+      "command": "node",
+      "args": ["path/to/build/index.js"],
+      "env": {
+        "ES_URL": "http://localhost:9200",
+        "ES_API_KEY": "your_api_key",
+        "ES_VERSION": "8"
+      }
     }
   }
 }
@@ -336,7 +376,8 @@ To add a new tool to the server:
 This server can be used with any MCP-compatible client, including:
 
 - OpenAI's ChatGPT via MCP plugins
-- Anthropic's Claude via MCP plugins
+- Anthropic's Claude Desktop
+- Claude in VS Code
 - Custom applications using the MCP SDK
 
 ## Programmatic Usage
@@ -344,7 +385,7 @@ This server can be used with any MCP-compatible client, including:
 You can also use the server programmatically in your Node.js applications:
 
 ```javascript
-import { createOctodetElasticsearchMcpServer } from "octodet-elasticsearch-mcp";
+import { createOctodetElasticsearchMcpServer } from "@octodet/elasticsearch-mcp";
 import { CustomTransport } from "@modelcontextprotocol/sdk/server";
 
 // Configure the Elasticsearch connection

@@ -1,11 +1,11 @@
 {
-  "name": "octodet-elasticsearch-mcp",
+  "name": "@octodet/elasticsearch-mcp",
   "version": "1.0.0",
   "description": "Octodet Elasticsearch Model Context Protocol server with advanced operations",
   "main": "./build/index.js",
   "type": "module",
   "bin": {
-    "octodet-es-mcp": "./build/index.js"
+    "elasticsearch-mcp": "./build/index.js"
   },
   "scripts": {
     "build": "tsc && chmod 755 build/index.js",
