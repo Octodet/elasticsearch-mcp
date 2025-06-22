@@ -22,7 +22,7 @@
     "data-operations"
   ],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@elastic/elasticsearch": "^8.10.0",
     "@modelcontextprotocol/sdk": "^1.12.1",
