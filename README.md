@@ -120,11 +120,17 @@ The server uses the following environment variables for configuration:
 
 ## Tools
 
-The server provides 16 MCP tools for Elasticsearch operations:
+The server provides 16 MCP tools for Elasticsearch operations. Each tool is documented with its required and optional parameters:
 
 ### 1. List Indices
 
 List all available Elasticsearch indices with detailed information.
+
+**Parameters:**
+
+- `indexPattern` (optional, string): Pattern to filter indices (e.g., "logs-_", "my-index-_")
+
+**Example:**
 
 ```json
 {
@@ -136,6 +142,12 @@ List all available Elasticsearch indices with detailed information.
 
 Get field mappings for a specific Elasticsearch index.
 
+**Parameters:**
+
+- `index` (required, string): The name of the index to get mappings for
+
+**Example:**
+
 ```json
 {
   "index": "my-index"
@@ -145,6 +157,14 @@ Get field mappings for a specific Elasticsearch index.
 ### 3. Search
 
 Perform an Elasticsearch search with the provided query DSL and highlighting.
+
+**Parameters:**
+
+- `index` (required, string): The index or indices to search in (supports comma-separated values)
+- `queryBody` (required, object): The Elasticsearch query DSL body
+- `highlight` (optional, boolean): Enable search result highlighting (default: true)
+
+**Example:**
 
 ```json
 {
@@ -156,14 +176,22 @@ Perform an Elasticsearch search with the provided query DSL and highlighting.
       }
     },
     "size": 10,
-    "from": 0
-  }
+    "from": 0,
+    "sort": [{ "_score": { "order": "desc" } }]
+  },
+  "highlight": true
 }
 ```
 
 ### 4. Get Cluster Health
 
 Get health information about the Elasticsearch cluster.
+
+**Parameters:**
+
+- None required
+
+**Example:**
 
 ```json
 {}
@@ -173,9 +201,15 @@ Get health information about the Elasticsearch cluster.
 
 Get shard information for all or specific indices.
 
+**Parameters:**
+
+- `index` (optional, string): Specific index to get shard information for. If omitted, returns shards for all indices
+
+**Example:**
+
 ```json
 {
-  "index": "my-index" // optional
+  "index": "my-index"
 }
 ```
 
@@ -183,13 +217,23 @@ Get shard information for all or specific indices.
 
 Add a new document to a specific Elasticsearch index.
 
+**Parameters:**
+
+- `index` (required, string): The index to add the document to
+- `document` (required, object): The document content to add
+- `id` (optional, string): Document ID. If omitted, Elasticsearch will generate one automatically
+
+**Example:**
+
 ```json
 {
   "index": "my-index",
-  "id": "doc1", // optional
+  "id": "doc1",
   "document": {
-    "field1": "value1",
-    "field2": "value2"
+    "title": "My Document",
+    "content": "Document content here",
+    "timestamp": "2025-06-23T10:30:00Z",
+    "tags": ["important", "draft"]
   }
 }
 ```
@@ -198,12 +242,21 @@ Add a new document to a specific Elasticsearch index.
 
 Update an existing document in a specific Elasticsearch index.
 
+**Parameters:**
+
+- `index` (required, string): The index containing the document
+- `id` (required, string): The ID of the document to update
+- `document` (required, object): The partial document with fields to update
+
+**Example:**
+
 ```json
 {
   "index": "my-index",
   "id": "doc1",
   "document": {
-    "field1": "new value"
+    "title": "Updated Document Title",
+    "last_modified": "2025-06-23T10:30:00Z"
   }
 }
 ```
@@ -211,6 +264,13 @@ Update an existing document in a specific Elasticsearch index.
 ### 8. Delete Document
 
 Delete a document from a specific Elasticsearch index.
+
+**Parameters:**
+
+- `index` (required, string): The index containing the document
+- `id` (required, string): The ID of the document to delete
+
+**Example:**
 
 ```json
 {
@@ -223,6 +283,16 @@ Delete a document from a specific Elasticsearch index.
 
 Update documents in an Elasticsearch index based on a query.
 
+**Parameters:**
+
+- `index` (required, string): The index to update documents in
+- `query` (required, object): Elasticsearch query to match documents for update
+- `script` (required, object): Script to execute for updating matched documents
+- `conflicts` (optional, string): How to handle version conflicts ("abort" or "proceed", default: "abort")
+- `refresh` (optional, boolean): Whether to refresh the index after the operation (default: false)
+
+**Example:**
+
 ```json
 {
   "index": "my-index",
@@ -232,9 +302,10 @@ Update documents in an Elasticsearch index based on a query.
     }
   },
   "script": {
-    "source": "ctx._source.status = 'inactive'",
+    "source": "ctx._source.status = params.newStatus; ctx._source.updated_at = params.timestamp",
     "params": {
-      "now": "2025-06-21"
+      "newStatus": "inactive",
+      "timestamp": "2025-06-23T10:30:00Z"
     }
   },
   "conflicts": "proceed",
@@ -246,12 +317,21 @@ Update documents in an Elasticsearch index based on a query.
 
 Delete documents in an Elasticsearch index based on a query.
 
+**Parameters:**
+
+- `index` (required, string): The index to delete documents from
+- `query` (required, object): Elasticsearch query to match documents for deletion
+- `conflicts` (optional, string): How to handle version conflicts ("abort" or "proceed", default: "abort")
+- `refresh` (optional, boolean): Whether to refresh the index after the operation (default: false)
+
+**Example:**
+
 ```json
 {
   "index": "my-index",
   "query": {
     "range": {
-      "date": {
+      "created_date": {
         "lt": "2025-01-01"
       }
     }
@@ -263,7 +343,17 @@ Delete documents in an Elasticsearch index based on a query.
 
 ### 11. Bulk Operations
 
-Perform multiple document operations in a single API call.
+Perform multiple document operations in a single API call for better performance.
+
+**Parameters:**
+
+- `operations` (required, array): Array of operation objects, each containing:
+  - `action` (required, string): The operation type ("index", "create", "update", or "delete")
+  - `index` (required, string): The index for this operation
+  - `id` (optional, string): Document ID (required for update/delete, optional for index/create)
+  - `document` (conditional, object): Document content (required for index/create/update operations)
+
+**Example:**
 
 ```json
 {
@@ -272,12 +362,18 @@ Perform multiple document operations in a single API call.
       "action": "index",
       "index": "my-index",
       "id": "doc1",
-      "document": { "field": "value" }
+      "document": { "title": "Document 1", "content": "Content here" }
+    },
+    {
+      "action": "update",
+      "index": "my-index",
+      "id": "doc2",
+      "document": { "title": "Updated Title" }
     },
     {
       "action": "delete",
       "index": "my-index",
-      "id": "doc2"
+      "id": "doc3"
     }
   ]
 }
@@ -287,17 +383,42 @@ Perform multiple document operations in a single API call.
 
 Create a new Elasticsearch index with optional settings and mappings.
 
+**Parameters:**
+
+- `index` (required, string): The name of the index to create
+- `settings` (optional, object): Index settings like number of shards, replicas, etc.
+- `mappings` (optional, object): Field mappings defining how documents should be indexed
+
+**Example:**
+
 ```json
 {
   "index": "new-index",
   "settings": {
     "number_of_shards": 3,
-    "number_of_replicas": 1
+    "number_of_replicas": 1,
+    "analysis": {
+      "analyzer": {
+        "custom_analyzer": {
+          "type": "standard",
+          "stopwords": "_english_"
+        }
+      }
+    }
   },
   "mappings": {
     "properties": {
-      "title": { "type": "text" },
-      "created": { "type": "date" }
+      "title": {
+        "type": "text",
+        "analyzer": "custom_analyzer"
+      },
+      "created": {
+        "type": "date",
+        "format": "yyyy-MM-dd'T'HH:mm:ss'Z'"
+      },
+      "tags": {
+        "type": "keyword"
+      }
     }
   }
 }
@@ -305,7 +426,13 @@ Create a new Elasticsearch index with optional settings and mappings.
 
 ### 13. Delete Index
 
-Delete an Elasticsearch index.
+Delete an Elasticsearch index permanently.
+
+**Parameters:**
+
+- `index` (required, string): The name of the index to delete
+
+**Example:**
 
 ```json
 {
@@ -317,13 +444,22 @@ Delete an Elasticsearch index.
 
 Count documents in an index, optionally filtered by a query.
 
+**Parameters:**
+
+- `index` (required, string): The index to count documents in
+- `query` (optional, object): Elasticsearch query to filter documents for counting
+
+**Example:**
+
 ```json
 {
   "index": "my-index",
   "query": {
-    // optional
-    "term": {
-      "status": "active"
+    "bool": {
+      "must": [
+        { "term": { "status": "active" } },
+        { "range": { "created_date": { "gte": "2025-01-01" } } }
+      ]
     }
   }
 }
@@ -333,9 +469,15 @@ Count documents in an index, optionally filtered by a query.
 
 Get index templates from Elasticsearch.
 
+**Parameters:**
+
+- `name` (optional, string): Specific template name to retrieve. If omitted, returns all templates
+
+**Example:**
+
 ```json
 {
-  "name": "template-name" // optional
+  "name": "logs-template"
 }
 ```
 
@@ -343,9 +485,15 @@ Get index templates from Elasticsearch.
 
 Get index aliases from Elasticsearch.
 
+**Parameters:**
+
+- `name` (optional, string): Specific alias name to retrieve. If omitted, returns all aliases
+
+**Example:**
+
 ```json
 {
-  "name": "alias-name" // optional
+  "name": "logs-alias"
 }
 ```
 
