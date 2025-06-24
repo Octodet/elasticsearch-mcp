@@ -23,6 +23,14 @@
   ],
   "author": "Octodet",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Octodet/elasticsearch-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Octodet/elasticsearch-mcp/issues"
+  },
+  "homepage": "https://github.com/Octodet/elasticsearch-mcp#readme",
   "dependencies": {
     "@elastic/elasticsearch": "^8.10.0",
     "@modelcontextprotocol/sdk": "^1.12.1",
