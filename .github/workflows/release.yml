@@ -132,6 +132,26 @@ jobs:
             NEW_VERSION="$MAJOR.$MINOR.$PATCH"
           fi
 
+          # Check if the calculated version already has a tag
+          while git ls-remote --tags origin | grep -q "refs/tags/v$NEW_VERSION$"; do
+            echo "Warning: Tag v$NEW_VERSION already exists, incrementing patch version"
+            case $BUMP_TYPE in
+              major|minor|patch)
+                PATCH=$((PATCH + 1))
+                NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+                ;;
+              prerelease)
+                if [[ "$NEW_VERSION" == *"-rc"* ]]; then
+                  RC_NUM=$(echo "$NEW_VERSION" | sed 's/.*-rc\.\([0-9]*\).*/\1/')
+                  RC_NUM=$((RC_NUM + 1))
+                  NEW_VERSION="$MAJOR.$MINOR.$PATCH-rc.$RC_NUM"
+                else
+                  NEW_VERSION="$MAJOR.$MINOR.$PATCH-rc.1"
+                fi
+                ;;
+            esac
+          done
+
           echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
           echo "Calculated new version: $NEW_VERSION"
 
@@ -233,6 +253,18 @@ jobs:
           NEW_VERSION="${{ needs.check-changes.outputs.version }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Check if tag already exists
+          if git tag -l "v$NEW_VERSION" | grep -q "v$NEW_VERSION"; then
+            echo "Tag v$NEW_VERSION already exists locally, deleting it first"
+            git tag -d "v$NEW_VERSION"
+          fi
+
+          # Check if tag exists on remote
+          if git ls-remote --tags origin | grep -q "refs/tags/v$NEW_VERSION$"; then
+            echo "Tag v$NEW_VERSION already exists on remote, deleting it first"
+            git push --delete origin "v$NEW_VERSION" || echo "Failed to delete remote tag, continuing..."
+          fi
 
           # Create annotated tag
           git tag -a "v$NEW_VERSION" -m "Release v$NEW_VERSION"
