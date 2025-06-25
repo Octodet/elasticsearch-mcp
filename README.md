@@ -2,6 +2,10 @@
 
 A Model Context Protocol (MCP) server for Elasticsearch operations, providing a comprehensive set of tools for interacting with Elasticsearch clusters through the standardized Model Context Protocol. This server enables LLM-powered applications to search, update, and manage Elasticsearch data.
 
+<a href="https://glama.ai/mcp/servers/@Octodet/elasticsearch-mcp">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@Octodet/elasticsearch-mcp/badge" alt="octodet-elasticsearch-mcp MCP server" />
+</a>
+
 ## Features
 
 - **Complete Elasticsearch Operations**: Full CRUD operations for documents and indices
