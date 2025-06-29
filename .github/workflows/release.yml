@@ -217,12 +217,21 @@ jobs:
           NEW_VERSION="${{ needs.check-changes.outputs.version }}"
           echo "Updating package.json to version: $NEW_VERSION"
 
+          # Configure git for the action
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
           # Update package.json with new version
           npm version $NEW_VERSION --no-git-tag-version
 
           # Verify the version was updated
           UPDATED_VERSION=$(node -p "require('./package.json').version")
           echo "Package.json now shows version: $UPDATED_VERSION"
+
+          # Commit the version change
+          git add package.json package-lock.json
+          git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
+          git push origin main
 
       - name: Generate changelog
         id: changelog
@@ -251,8 +260,8 @@ jobs:
       - name: Create and push tag
         run: |
           NEW_VERSION="${{ needs.check-changes.outputs.version }}"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Git config was already set in the previous step
 
           # Check if tag already exists
           if git tag -l "v$NEW_VERSION" | grep -q "v$NEW_VERSION"; then
