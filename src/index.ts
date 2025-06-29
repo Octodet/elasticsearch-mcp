@@ -190,7 +190,7 @@ export async function createOctodetElasticsearchMcpServer(
   // Tool 3: Search an index
   server.tool(
     "search",
-    "Perform an Elasticsearch search with the provided query DSL and highlighting",
+    "Perform an Elasticsearch search with the provided query DSL, highlighting, and script fields",
     {
       index: z
         .string()
@@ -203,10 +203,39 @@ export async function createOctodetElasticsearchMcpServer(
         .describe(
           "Complete Elasticsearch query DSL object (can include query, size, from, sort, etc.)"
         ),
+
+      scriptFields: z
+        .record(
+          z.object({
+            script: z.object({
+              source: z
+                .string()
+                .min(1, "Script source is required")
+                .describe("Painless script source code"),
+              params: z
+                .record(z.any())
+                .optional()
+                .describe("Optional parameters for the script"),
+              lang: z
+                .string()
+                .optional()
+                .default("painless")
+                .describe("Script language (defaults to painless)"),
+            })
+          })
+        )
+        .optional()
+        .describe("Script fields to evaluate and include in the response"),
     },
-    async ({ index, queryBody }, extra) => {
+    async ({ index, queryBody, scriptFields }, extra) => {
       try {
-        const result = await esService.search(index, queryBody);
+        // Add script_fields to the query body if provided
+        const enhancedQueryBody = { ...queryBody };
+        if (scriptFields && Object.keys(scriptFields).length > 0) {
+          enhancedQueryBody.script_fields = scriptFields;
+        }
+
+        const result = await esService.search(index, enhancedQueryBody);
 
         // Extract the 'from' parameter from queryBody, defaulting to 0 if not provided
         const from = queryBody.from ?? 0;
@@ -239,8 +268,14 @@ export async function createOctodetElasticsearchMcpServer(
         result.hits.hits.forEach((hit: any) => {
           const highlightedFields = hit.highlight ?? {};
           const sourceData = hit._source ?? {};
+          const scriptFieldsData = hit.fields ?? {};
 
           let content = `Document ID: ${hit._id}\nScore: ${hit._score}\n\n`;
+
+          // Add script fields results
+          for (const [field, value] of Object.entries(scriptFieldsData)) {
+            content += `${field} (script): ${JSON.stringify(value)}\n`;
+          }
 
           // Add highlighted fields
           for (const [field, highlights] of Object.entries(highlightedFields)) {

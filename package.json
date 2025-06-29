@@ -1,6 +1,6 @@
 {
   "name": "@octodet/elasticsearch-mcp",
-  "version": "1.0.0",
+  "version": "1.0.6",
   "description": "Octodet Elasticsearch Model Context Protocol server with advanced operations",
   "main": "./build/index.js",
   "type": "module",
